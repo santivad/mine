@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LoveBot - Il tuo assistente romantico</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-image: url('https://cdn.discordapp.com/attachments/1134533272441983086/1278741871736258600/37936.jpg?ex=66d1e8ac&is=66d0972c&hm=5500f54cb79f8bda27f06a98742ec5a210d917495926ec37d09e856ff2d701ec&');
+            background-size: cover;
+            background-position: center;
+            background-color: #ffe6e6;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-container {
+            background-color: #fff;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            width: 350px;
+            max-width: 100%;
+            margin-bottom: 20px;
+            display: none; /* Hide content initially */
+        }
+
+        .chat-header {
+            background-color: #ff4d4d;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .chat-messages {
+            height: 400px;
+            overflow-y: scroll;
+            padding: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            line-height: 1.4;
+        }
+
+        .bot-message {
+            background-color: #ffb3b3;
+            color: #333;
+            border-radius: 18px 18px 18px 0;
+            padding: 10px 15px;
+            max-width: 80%;
+            float: left;
+            clear: both;
+        }
+
+        .user-message {
+            background-color: #ff8080;
+            color: white;
+            border-radius: 18px 18px 0 18px;
+            padding: 10px 15px;
+            max-width: 80%;
+            float: right;
+            clear: both;
+        }
+
+        .chat-input {
+            display: flex;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+
+        #user-input {
+            flex-grow: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 30px;
+            font-size: 16px;
+        }
+
+        #send-button, #generate-button {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        #generate-button {
+            margin-left: 5px; /* Minor adjustment for spacing */
+        }
+
+        /* Modal styles */
+        .modal {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background-color: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            text-align: center;
+            width: 80%;
+            max-width: 500px;
+        }
+
+        .modal-button {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+        }
+
+        .modal-button.cancel {
+            background-color: #d9534f;
+        }
+
+        .modal-button.accept {
+            background-color: #5bc0de;
+        }
+
+        .paypal-button-container {
+            margin-top: 20px;
+        }
+
+        /* Audio player styles */
+        .audio-player {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .audio-player audio {
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Modal -->
+    <div id="disclaimer-modal" class="modal">
+        <div class="modal-content">
+            <h2>Disclaimer</h2>
+            <p>Benvenuto su LoveBot. Si prega di notare che le risposte fornite sono per puro intrattenimento e ispirazione. Non ci assumiamo alcuna responsabilità per l'uso delle informazioni fornite. Utilizza il servizio con discrezione e ricorda che l'amore vero nasce dal cuore.</p>
+            <p>Se desideri supportare il nostro lavoro, puoi fare una donazione tramite PayPal:</p>
+            <!-- PayPal Button -->
+            <div class="paypal-button-container">
+                <form action="https://www.paypal.com/donate" method="post" target="_blank">
+                    <input type="hidden" name="business" value="santivad@outlook.it">
+                    <input type="hidden" name="currency_code" value="EUR">
+                    <input type="submit" value="Dona tramite PayPal" class="modal-button accept">
+                </form>
+            </div>
+            <button class="modal-button accept" id="accept-button">Accetto</button>
+            <button class="modal-button cancel" id="cancel-button">Rifiuto</button>
+        </div>
+    </div>
+
+    <!-- Chat Container -->
+    <div class="chat-container">
+        <div class="chat-header">
+            💖 LoveBot 💖
+        </div>
+        <div class="chat-messages" id="chat-container">
+            <div class="message bot-message">Benvenuto! Sono LoveBot, il tuo assistente romantico. Come posso aiutarti oggi?</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="user-input" placeholder="Scrivi il tuo messaggio...">
+            <button id="send-button">➤</button>
+            <button id="generate-button">🩷</button>
+        </div>
+    </div>
+
+    <!-- Audio Player -->
+    <div class="audio-player">
+        <audio controls>
+            <source src="https://www.bensound.com/bensound-music/bensound-summer.mp3" type="audio/mpeg">
+            Il tuo browser non supporta il tag audio.
+        </audio>
+    </div>
+
+    <script>
+        const disclaimerModal = document.getElementById('disclaimer-modal');
+        const acceptButton = document.getElementById('accept-button');
+        const cancelButton = document.getElementById('cancel-button');
+        const chatContainer = document.getElementById('chat-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const generateButton = document.getElementById('generate-button');
+        const chatContent = document.querySelector('.chat-container');
+
+        function addMessage(sender, message, isBot = false) {
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${isBot ? 'bot-message' : 'user-message'}`;
+            messageElement.textContent = message;
+            chatContainer.appendChild(messageElement);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function loveBotResponse(message) {
+            const lowerCaseMessage = message.toLowerCase();
+            
+            const responses = {
+                "cosa puoi fare": "Posso offrirti consigli romantici, dedicarti poesie, aiutarti a trovare le parole giuste per esprimere i tuoi sentimenti e molto altro. Chiedimi pure!",
+                "poesia": getRandomPoem(),
+                "dedica": getRandomPoem(),
+                "complimento": "Un bel complimento può fare molto. Prova con qualcosa come 'Il tuo sorriso illumina la mia giornata.'",
+                "come stai": "Sono sempre pronto ad aiutarti con il cuore! Come posso assisterti oggi?",
+                "aiuto": "Sono qui per offrirti consigli su come esprimere i tuoi sentimenti, trovare ispirazione romantica o semplicemente ascoltare. Come posso aiutarti?",
+                "grazie": "Prego! Se hai bisogno di ulteriori consigli o semplicemente vuoi parlare, sono qui per te.",
+                "ciao": "Ciao! Sono LoveBot, il tuo assistente romantico. Come posso rendere la tua giornata speciale?",
+                "default": "Non sono sicuro di come rispondere a questo, ma sono qui per aiutarti con amore e dedizione. Parlami di più e vediamo come posso assisterti!"
+            };
+
+            for (let key in responses) {
+                if (lowerCaseMessage.includes(key)) {
+                    return responses[key];
+                }
+            }
+            return responses["default"];
+        }
+
+        function getRandomPoem() {
+            const poems = [
+                "Nel giardino dei sogni, il tuo amore è il fiore più prezioso che sboccia. 🌸",
+                "Sotto il cielo delle stelle, il mio cuore canta una melodia solo per te. 🎵",
+                // ... (other poems)
+                "La tua voce è una dolce melodia che accompagna i miei pensieri più profondi. 🎼"
+            ];
+            return poems[Math.floor(Math.random() * poems.length)];
+        }
+
+        function getRandomApproach() {
+            const approaches = [
+                "Sei davvero affascinante. Posso offrirti un caffè per conoscerci meglio?",
+                "Ho notato il tuo sorriso da lontano. Posso chiederti il segreto per essere così radiosa?",
+                // ... (other approaches)
+                "Ho visto che sei molto affascinante. Posso chiederti di condividere qualche storia interessante con me?"
+            ];
+            return approaches[Math.floor(Math.random() * approaches.length)];
+        }
+
+        function sendMessage() {
+            const message = userInput.value.trim();
+            if (message) {
+                addMessage('Tu', message);
+                userInput.value = '';
+                
+                setTimeout(() => {
+                    const botResponse = loveBotResponse(message);
+                    addMessage('LoveBot', botResponse, true);
+                }, 1000);
+            }
+        }
+
+        function generateApproach() {
+            const approach = getRandomApproach();
+            addMessage('LoveBot', approach, true);
+        }
+
+        acceptButton.addEventListener('click', () => {
+            disclaimerModal.style.display = 'none';
+            chatContent.style.display = 'block'; // Show chat content after acceptance
+        });
+
+        cancelButton.addEventListener('click', () => {
+            alert('Non puoi accedere al servizio senza accettare il disclaimer.');
+            window.location.href = 'about:blank'; // Redirect to a blank page or close the window
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+        generateButton.addEventListener('click', generateApproach);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Show the modal on page load
+        window.onload = () => {
+            disclaimerModal.style.display = 'flex';
+        };
+    </script>
+</body>
+</html>
